@@ -15,7 +15,7 @@ local Camera = Workspace.CurrentCamera
 
 -- Load library if it is not already in getgenv()
 if not getgenv().Library then
-    loadstring(readfile("Library.lua (4).txt"))()
+    loadstring(game:HttpGet(""))()
 end
 
 local Library = getgenv().Library
