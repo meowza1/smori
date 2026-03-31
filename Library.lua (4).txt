@@ -3,7 +3,7 @@
 
 -- Variables 
     -- Services
-    local InputService, HttpService, GuiService, RunService, Stats, CoreGui, TweenService, SoundService, Workspace, Players = game:GetService("UserInputService"), game:GetService("HttpService"), game:GetService("GuiService"), game:GetService("RunService"), game:GetService("Stats"), game:GetService("CoreGui"), game:GetService("TweenService"), game:GetService("SoundService"), game:GetService("Workspace"), game:GetService("Players")
+    local InputService, HttpService, GuiService, RunService, Stats, CoreGui, TweenService, SoundService, Workspace, Players, Lighting = game:GetService("UserInputService"), game:GetService("HttpService"), game:GetService("GuiService"), game:GetService("RunService"), game:GetService("Stats"), game:GetService("CoreGui"), game:GetService("TweenService"), game:GetService("SoundService"), game:GetService("Workspace"), game:GetService("Players"), game:GetService("Lighting")
     local Camera, lp, gui_offset = Workspace.CurrentCamera, Players.LocalPlayer, GuiService:GetGuiInset().Y
     local mouse = lp:GetMouse()
 
@@ -1407,6 +1407,77 @@
                         BackgroundColor3 = themes.preset.outline
                     }); Items.Window.Position = dim2(0, Items.Window.AbsolutePosition.X, 0, Items.Window.AbsolutePosition.Y); Library:Themify(Items.Window, "outline", "BackgroundColor3");
 
+                    Items.WindowGlow = Library:Create( "Frame" , {
+                        Parent = Library.Items;
+                        Name = "\0";
+                        BackgroundTransparency = 1;
+                        BorderSizePixel = 0;
+                        ZIndex = math.max(Items.Window.ZIndex - 3, 0);
+                        BackgroundColor3 = rgb(255, 255, 255)
+                    });
+
+                    Items.WindowGlowInner = Library:Create( "Frame" , {
+                        Parent = Items.WindowGlow;
+                        Name = "\0";
+                        BorderSizePixel = 0;
+                        BackgroundTransparency = 0.92;
+                        BackgroundColor3 = themes.preset.accent;
+                        ZIndex = Items.WindowGlow.ZIndex;
+                    }); Library:Themify(Items.WindowGlowInner, "accent", "BackgroundColor3")
+
+                    Items.WindowGlowMid = Library:Create( "Frame" , {
+                        Parent = Items.WindowGlow;
+                        Name = "\0";
+                        BorderSizePixel = 0;
+                        BackgroundTransparency = 0.96;
+                        BackgroundColor3 = themes.preset.accent;
+                        ZIndex = Items.WindowGlow.ZIndex;
+                    }); Library:Themify(Items.WindowGlowMid, "accent", "BackgroundColor3")
+
+                    Items.WindowGlowOuter = Library:Create( "Frame" , {
+                        Parent = Items.WindowGlow;
+                        Name = "\0";
+                        BorderSizePixel = 0;
+                        BackgroundTransparency = 0.985;
+                        BackgroundColor3 = themes.preset.accent;
+                        ZIndex = Items.WindowGlow.ZIndex;
+                    }); Library:Themify(Items.WindowGlowOuter, "accent", "BackgroundColor3")
+
+                    local function UpdateWindowGlow(tween)
+                        local XScale, XOffset = Items.Window.Position.X.Scale, Items.Window.Position.X.Offset
+                        local YScale, YOffset = Items.Window.Position.Y.Scale, Items.Window.Position.Y.Offset
+                        local WScale, WOffset = Items.Window.Size.X.Scale, Items.Window.Size.X.Offset
+                        local HScale, HOffset = Items.Window.Size.Y.Scale, Items.Window.Size.Y.Offset
+
+                        local Bindings = {
+                            {Items.WindowGlowInner, -6, -6, 12, 12};
+                            {Items.WindowGlowMid, -12, -12, 24, 24};
+                            {Items.WindowGlowOuter, -18, -18, 36, 36};
+                        }
+
+                        for _,bind in Bindings do
+                            local Position = dim2(XScale, XOffset + bind[2], YScale, YOffset + bind[3])
+                            local Size = dim2(WScale, WOffset + bind[4], HScale, HOffset + bind[5])
+
+                            if tween then
+                                Library:Tween(bind[1], {Position = Position; Size = Size;})
+                            else
+                                bind[1].Position = Position
+                                bind[1].Size = Size
+                            end
+                        end
+                    end
+
+                    UpdateWindowGlow(false)
+
+                    Library:Connection(Items.Window:GetPropertyChangedSignal("Position"), function()
+                        UpdateWindowGlow(true)
+                    end)
+
+                    Library:Connection(Items.Window:GetPropertyChangedSignal("Size"), function()
+                        UpdateWindowGlow(true)
+                    end)
+
                     Items.Inline = Library:Create( "Frame" , {
                         Parent = Items.Window;
                         Name = "\0";
@@ -1940,6 +2011,15 @@
                 Library:Resizify(Items.Window)
             end
 
+            local UIBlur = Lighting:FindFirstChild("UIBlur")
+            if not UIBlur then
+                UIBlur = Instance.new("BlurEffect")
+                UIBlur.Name = "UIBlur"
+                UIBlur.Size = 0
+                UIBlur.Enabled = false
+                UIBlur.Parent = Lighting
+            end
+
             function Cfg.ToggleMenu(bool) 
                 if Cfg.Tweening then 
                     return 
@@ -1949,7 +2029,13 @@
 
                 if bool then 
                     Items.Window.Visible = true
+                    UIBlur.Enabled = true
                 end
+
+                Library:Tween(UIBlur, {Size = bool and 12 or 0})
+                Library:Tween(Items.WindowGlowInner, {BackgroundTransparency = bool and 0.92 or 1})
+                Library:Tween(Items.WindowGlowMid, {BackgroundTransparency = bool and 0.96 or 1})
+                Library:Tween(Items.WindowGlowOuter, {BackgroundTransparency = bool and 0.985 or 1})
 
                 local Children = Items.Window:GetDescendants()
                 table.insert(Children, Items.Window)
@@ -1974,6 +2060,9 @@
                 Library:Connection(Tween.Completed, function()
                     Cfg.Tweening = false
                     Items.Window.Visible = bool
+                    if not bool then
+                        UIBlur.Enabled = false
+                    end
                 end)
             end 
 
@@ -2899,7 +2988,7 @@
                     Parent = Items.Accent;
                     Color = rgbseq{rgbkey(0, rgb(255, 255, 255)), rgbkey(1, rgb(158, 158, 158))}
                 });
-                
+
                 Items.Outline = Library:Create( "Frame" , {
                     Parent = Items.Section;
                     Name = "\0";
@@ -3252,7 +3341,7 @@
                     Parent = Items.Accent;
                     Color = rgbseq{rgbkey(0, rgb(255, 255, 255)), rgbkey(1, rgb(158, 158, 158))}
                 });
-                
+
                 Items.Outline = Library:Create( "Frame" , {
                     Parent = Items.Section;
                     Name = "\0";
@@ -3347,6 +3436,14 @@
                     Parent = Items.Accent;
                     Color = rgbseq{rgbkey(0, rgb(255, 255, 255)), rgbkey(1, rgb(158, 158, 158))}
                 });
+
+                Items.AccentGlow = Library:Create( "UIStroke" , {
+                    Parent = Items.Accent;
+                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border;
+                    Thickness = 1.5;
+                    Transparency = 1;
+                    Color = themes.preset.accent
+                }); Library:Themify(Items.AccentGlow, "accent", "Color")
 
                 Items.Name = Library:Create( "TextLabel" , {
                     FontFace = Library.Font;
@@ -3483,6 +3580,7 @@
                 Cfg.Callback(bool)
 
                 Library:Tween(Items.Accent, {BackgroundColor3 = bool and themes.preset.accent or themes.preset.inline})
+                Library:Tween(Items.AccentGlow, {Transparency = bool and 0.42 or 1})
                 
                 Flags[Cfg.Flag] = bool
                 
@@ -3568,6 +3666,14 @@
                     Parent = Items.Accent;
                     Color = rgbseq{rgbkey(0, rgb(255, 255, 255)), rgbkey(1, rgb(158, 158, 158))}
                 });
+
+                Items.AccentGlow = Library:Create( "UIStroke" , {
+                    Parent = Items.Accent;
+                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border;
+                    Thickness = 1.5;
+                    Transparency = 0.6;
+                    Color = themes.preset.accent
+                }); Library:Themify(Items.AccentGlow, "accent", "Color")
                 
                 Items.Value = Library:Create( "TextLabel" , {
                     LayoutOrder = -1;
@@ -3688,8 +3794,10 @@
 
             function Cfg.Set(value)
                 Cfg.Value = math.clamp(Library:Round(value, Cfg.Intervals), Cfg.Min, Cfg.Max)
+                local Alpha = (Cfg.Value - Cfg.Min) / (Cfg.Max - Cfg.Min)
 
-                Items.Accent.Size = dim2((Cfg.Value - Cfg.Min) / (Cfg.Max - Cfg.Min), Cfg.Value == Cfg.Min and 0 or -2, 1, -2)
+                Items.Accent.Size = dim2(Alpha, Cfg.Value == Cfg.Min and 0 or -2, 1, -2)
+                Library:Tween(Items.AccentGlow, {Transparency = math.clamp(0.85 - (Alpha * 0.45), 0.35, 0.85)})
                 Items.Value.Text = tostring(Cfg.Value) .. Cfg.Suffix
 
                 Flags[Cfg.Flag] = Cfg.Value
