@@ -15,7 +15,7 @@ local Camera = Workspace.CurrentCamera
 
 -- Load library if it is not already in getgenv()
 if not getgenv().Library then
-    loadstring(game:HttpGet(""))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/meowza1/smori/refs/heads/main/Library.lua"))()
 end
 
 local Library = getgenv().Library
